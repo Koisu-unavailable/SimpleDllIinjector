@@ -1,26 +1,32 @@
+#include <Psapi.h>
 #include <windows.h>
 #include <stdio.h>
 
-DWORD WINAPI threadFunc(LPVOID lpParam)
-{
-    printf("MWAGHAHHAHAH");
-    return 0;
-}
-
 int main(int argc, char **argv)
 {
-    Sleep(5000);
     if (argc != 3){
-        printf("What are you doing!?!?? ARGC was: %d\n", argc);
+        printf("usage: injector <path to dll> <pid>");
         return 0;
     }
     PCSTR pathToDll = argv[1];
-    printf("%s\n", pathToDll);
-    // convert it to a number
     DWORD pid = atoi(argv[2]);
+    HANDLE processHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
+    if (!processHandle){
+        printf("Couldn't open process with pid %d, maybe the pid is invalid?", pid);
+        return 1;
+    }
+    char processName[1024];
+    int open_process_result;
+    open_process_result = GetModuleBaseName(processHandle, NULL, processName, 1024 );
+    if (open_process_result == 0){
+        strcpy(&processName, "unknown");
+    }
+    printf("Injecting%s into pid: %d (%s)\n", pathToDll, pid, processHandle);
+    // convert it to a number
+    
     printf("Pid: %d\n", pid);
 
-    HANDLE processHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
+    
     if (processHandle == NULL)
     {
         printf("Process handle was null, kys.");

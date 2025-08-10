@@ -1,0 +1,5 @@
+{
+    "files.associations": {
+        "psapi.h": "c"
+    }
+}
