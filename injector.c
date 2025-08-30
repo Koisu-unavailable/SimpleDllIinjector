@@ -29,6 +29,7 @@ int main(int argc, char **argv)
     
     if (get_file_name_result == 0){
         printLastError();
+        return 1;
     }
     
     printf("Injecting %s into pid: %lu (", pathToDll, pid);
@@ -39,7 +40,7 @@ int main(int argc, char **argv)
 
     if (mem == NULL)
     {
-        printf("Couldn't allocate memory kys.");
+        printLastError();
         return 1;
     }
 
