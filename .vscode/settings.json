@@ -1,5 +1,8 @@
 {
     "files.associations": {
-        "psapi.h": "c"
+        "psapi.h": "c",
+        "windows.h": "c",
+        "stdio.h": "c",
+        "*.rh": "c"
     }
 }

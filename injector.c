@@ -1,37 +1,39 @@
-#include <Psapi.h>
 #include <windows.h>
+#include <Psapi.h>
 #include <stdio.h>
+#define pNameBufSize 100
+
+
+
+void printLastError();
 
 int main(int argc, char **argv)
 {
-    if (argc != 3){
+    if (argc != 3)
+    {
         printf("usage: injector <path to dll> <pid>");
         return 0;
     }
     PCSTR pathToDll = argv[1];
     DWORD pid = atoi(argv[2]);
     HANDLE processHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
-    if (!processHandle){
-        printf("Couldn't open process with pid %d, maybe the pid is invalid?", pid);
-        return 1;
-    }
-    char processName[1024];
-    int open_process_result;
-    open_process_result = GetModuleBaseName(processHandle, NULL, processName, 1024 );
-    if (open_process_result == 0){
-        strcpy(&processName, "unknown");
-    }
-    printf("Injecting%s into pid: %d (%s)\n", pathToDll, pid, processHandle);
-    // convert it to a number
-    
-    printf("Pid: %d\n", pid);
-
-    
-    if (processHandle == NULL)
+    if (!processHandle)
     {
-        printf("Process handle was null, kys.");
+        printf("Couldn't open process with pid %lu, maybe the pid is invalid or you don't have permission?\n", pid);
         return 1;
     }
+    
+    CHAR processName[pNameBufSize];
+    int get_file_name_result;    
+    get_file_name_result = GetModuleFileNameEx(processHandle, NULL, processName, pNameBufSize);
+    
+    if (get_file_name_result == 0){
+        printLastError();
+    }
+    
+    printf("Injecting %s into pid: %lu (", pathToDll, pid);
+    printf(processName);
+    printf(")\n");
 
     LPVOID mem = VirtualAllocEx(processHandle, NULL, strlen(pathToDll) + 1, (MEM_COMMIT | MEM_RESERVE), PAGE_READWRITE);
 
@@ -45,7 +47,7 @@ int main(int argc, char **argv)
 
     if (result == FALSE)
     {
-        printf("Couldn't write mem. kys");
+        printLastError();
         return 1;
     }
 
@@ -53,8 +55,7 @@ int main(int argc, char **argv)
 
     if (addressOfKernel32 == NULL)
     {
-        printf("AH!\n");
-        printf("%d", GetLastError());
+        printLastError();
         return 1;
     }
 
@@ -62,7 +63,8 @@ int main(int argc, char **argv)
 
     if (load_library_address == NULL)
     {
-        printf("ajkjsd");
+        printLastError();
+        return 1;
     }
 
     HANDLE hThread = CreateRemoteThread(
@@ -72,11 +74,25 @@ int main(int argc, char **argv)
 
     if (hThread == NULL)
     {
-        printf("CreateRemoteThread failed. Error: %lu\n", GetLastError());
+        printLastError();
         return 1;
     }
-
     WaitForSingleObject(hThread, INFINITE);
     CloseHandle(processHandle);
     return 0;
+}
+
+
+void printLastError(){
+    LPSTR pointer_to_message = NULL;
+        FormatMessageA(
+                    FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+                    NULL, 
+                    GetLastError(),
+                    LANG_USER_DEFAULT,
+                    (LPSTR)&pointer_to_message,
+                    0,
+                    NULL);
+    printf("%s", pointer_to_message);
+    
 }
